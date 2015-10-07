@@ -3,7 +3,7 @@ ASM=${ASMPATH}/asm
 HEX2H=${ASMPATH}/hex2h
 
 %.hex:%.asm
-	(rm -f $@ && cpp -P $< | ${ASM} >$@)
+	(rm -f $@ && cpp -P $< | ${ASM} -o $@)
 
 %.h:%.hex
 	${HEX2H} $< >$@
