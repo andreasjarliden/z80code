@@ -45,8 +45,10 @@ setupPio:
 	ret
 
 inputInt:
+	push af
 	in (PIO_A_DATA)
 	out (PIO_A_DATA)
+	pop af
 	ei
 	reti
 
