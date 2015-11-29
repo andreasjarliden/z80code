@@ -2,6 +2,7 @@ ASMPATH=~/working/assembler/build
 ASM=${ASMPATH}/asm
 HEX2H=${ASMPATH}/hex2h
 HEX2I8HEX=${ASMPATH}/hex2i8hex
+HEX2BIN=${ASMPATH}/hex2bin
 
 %.hex:%.asm
 	(rm -f $@ && cpp -P $< | ${ASM} -o $@)
@@ -15,5 +16,10 @@ HEX2I8HEX=${ASMPATH}/hex2i8hex
 %.i8hex:%.hex
 	${HEX2I8HEX} $< >$@
 
+%.bin:%.hex
+	${HEX2BIN} $< >/tmp/program.bin && ./filesizeToBin.sh /tmp/program.bin >/tmp/size.bin && cat /tmp/size.bin /tmp/program.bin >$@
+
 testPrintString.hex:testPrintString.asm constants.asm setupPio.asm blockingSend.asm
+
+loader3.hex: loader3.asm constants.asm setupPio.asm blockingSend.asm
 
