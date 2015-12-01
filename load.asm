@@ -1,5 +1,9 @@
-.eq PIO_B_DATA 01h
-	ld a, 42h
-	out (PIO_B_DATA)
+#include "constants.asm"
+.org 8000h
+	ld de, hello_world_string
+	call BLOCKING_SEND
 loop:
+	halt
 	jr loop
+hello_world_string: .string "Hello World!"
+	.int16 0

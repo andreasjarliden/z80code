@@ -6,7 +6,7 @@ blockingSend:
 	push de
 	push hl
 	; install output interrupt handler
-	ld hl, didOutput
+	ld hl, bs_didOutput
 	ld (INTERRUPT_VECTOR_PIO_OUTPUT), hl
 	ld a, (de)
 	or a
@@ -18,7 +18,7 @@ bs_wait:
 	pop de
 	pop af
 	ret
-didOutput:
+bs_didOutput:
 	inc de
 	ld a, (de)
 	or a
