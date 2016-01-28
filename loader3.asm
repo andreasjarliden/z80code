@@ -1,9 +1,12 @@
 #include "constants.asm"
 	jr init
+
+; Jump table for ROM functions
 	jp blockingSend
 	jp getChar
 	jp putChar
 	jp printHex
+
 init:
 	ld sp, STACK_ADDRESS
 	ld a, INTERRUPT_TABLE_HIGH
@@ -15,6 +18,46 @@ init:
 	im 2	; Interupt mode 2: vectored interrupts
 	ei
 
+
+menu:
+	call command
+	jr menu
+
+
+command:
+	push af
+	push de
+	ld de, promptString
+	call blockingSend
+	call getChar
+	cp   6ch                      ; l - load
+	jr   nz, command_1
+	call load
+	jr   command_done
+command_1:
+	cp   72h                      ; r - run
+	jr   nz, command_2
+	call LOAD_ADDRESS
+	jr   command_done
+command_2:
+	cp   68h                      ; h - help
+	jr   nz, command_3
+	ld de, helpString
+	call blockingSend
+	jr   command_done
+command_3:
+	ld de, syntaxErrorString
+	call blockingSend
+command_done:
+	pop de
+	pop af
+	ret
+
+
+load:
+	push af
+	push bc
+	push de
 	ld de, waitingSizeString
 	call blockingSend
 	call getChar
@@ -42,14 +85,23 @@ load_loop:
 	jr nz, load_loop
 	ld de, loadedString
 	call blockingSend
-	jp LOAD_ADDRESS
+	pop de
+	pop bc
+	pop af
+	ret
 
-waitingSizeString: .string "Waiting for size"
-	.int16 0
+waitingSizeString: .string "Waiting for size... "
+	.int8 0
 sizeString: .string "Size "
-	.int16 0
-loadedString: .string "Loaded OK"
-	.int16 0
+	.int8 0
+loadedString: .string "Loaded OK\n"
+	.int8 0
+syntaxErrorString: .string "Syntax Error\n"
+	.int8 0
+promptString: .string "> "
+	.int8 0
+helpString: .string "h - help\nl - load\nr - run\n"
+	.int8 0
 
 #include "setupPio.asm"
 #include "blockingSend.asm"
