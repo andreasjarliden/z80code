@@ -1,3 +1,6 @@
 *.h
 *.hex
+*.pp
+*.bin
+*.i8hex
 .gitignore
