@@ -45,13 +45,3 @@ syntaxError_string:
 menu_prompt:
 	.string "---> "
 	.int8 0
-found_string:
-	.string "found!\n"
-	.int8 0
-call1_string:
-	.string "Entered 1\n"
-	.int8 0
-callA_string:
-	.string "Entered a\n"
-	.int8 0
-
