@@ -38,6 +38,7 @@ cfm_return:
 	pop af
 	ret
 
+
 syntaxError_string:
 	.string "Invalid entry\n"
 	.int8 0
@@ -53,10 +54,4 @@ call1_string:
 callA_string:
 	.string "Entered a\n"
 	.int8 0
-testMenu: 
-	.int8 '1'
-	.int16 call1
-	.int8 'a'
-	.int16 callA
-	.int8 0		; 0 terminated
 

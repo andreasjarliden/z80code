@@ -1,3 +1,9 @@
+#include "constants.asm"
+.org 8000h
+	ld hl, testMenu
+	call callFromMenu
+	ret
+
 ; hl - pointer to menu struct
 callFromMenu:
 	push af
@@ -36,6 +42,15 @@ cfm_return:
 	pop de
 	pop bc
 	pop af
+	ret
+
+call1:
+	ld de, call1_string
+	call BLOCKING_SEND
+	ret
+callA:
+	ld de, callA_string
+	call BLOCKING_SEND
 	ret
 
 syntaxError_string:

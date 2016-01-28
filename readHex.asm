@@ -1,28 +1,14 @@
-
-#include "constants.asm"
-.org 8000h
-	ld de, promptString
-	call BLOCKING_SEND
-	call readHex
-	ld a, h
-	call PRINT_HEX
-	ld a, l
-	call PRINT_HEX
-	ld a, 10h
-	call PUT_CHAR
-	jp 8000h
-
 ; Returns 16-bit hex value in HL
 readHex:
 	push af
 	push bc
 	push de
 	ld hl, 0
-loop:
+rh_loop:
 	call GET_CHAR
 	call PUT_CHAR
 	cp 0ah
-	jr z, done
+	jr z, rh_done
 	ld d, h
 	ld e, l
 	ld hl, digitsAscii
@@ -44,8 +30,8 @@ loop:
 	add hl, hl
 	or l
 	ld  l, a
-	jr loop
-done:
+	jr rh_loop
+rh_done:
 	pop de
 	pop bc
 	pop af
@@ -74,6 +60,4 @@ digitsValues:
 	.int8 3
 	.int8 2
 	.int8 1
-	.int8 0
-promptString: .string " > "
 	.int8 0

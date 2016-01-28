@@ -1,4 +1,3 @@
-#include "constants.asm"
 ; Blocking read of a character from PIO A returned in register A.
 getChar:
 	push af
@@ -21,20 +20,3 @@ getChar_cont:
 	in (PIO_A_DATA)
 	ei
 	reti
-
-
-putChar:
-	push hl
-	ld hl, pc_didOutput
-	ld (INTERRUPT_VECTOR_PIO_OUTPUT), hl
-	out (PIO_A_DATA)
-pc_loop:
-	halt
-	jr pc_loop ; Not PIO output interrupt, keep waiting
-pc_didOutput:
-	inc sp
-	inc sp
-	pop hl
-	ei
-	reti
-	
