@@ -7,7 +7,7 @@ readHex:
 rh_loop:
 	call GET_CHAR
 	call PUT_CHAR
-	cp 0ah
+	cp 0dh
 	jr z, rh_done
 	ld d, h
 	ld e, l
@@ -15,9 +15,6 @@ rh_loop:
 	ld bc, 22
 
 	cpir
-
-	ld a, c
-	call PRINT_HEX
 
 	ld hl, digitsValues
 	add hl, bc

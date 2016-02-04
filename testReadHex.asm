@@ -3,15 +3,14 @@
 .org 8000h
 	ld de, promptString
 	call BLOCKING_SEND
-	call readHex
+	call READ_HEX
 	ld a, h
 	call PRINT_HEX
 	ld a, l
 	call PRINT_HEX
 	ld a, 0ah
 	call PUT_CHAR
-	jp 8000h
+	ret
 
-#include "readHex.asm"
 promptString: .string " > "
 	.int8 0
