@@ -8,6 +8,9 @@ callFromMenu:
 	call BLOCKING_SEND
 	call GET_CHAR
 	ld c, a			; c - entered char
+	call PUT_CHAR
+	ld a, 0ah
+	call PUT_CHAR
 cfm_loop:
 	ld b, (hl)
 	ld a, 0

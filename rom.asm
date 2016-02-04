@@ -20,7 +20,7 @@ init:
 	ei
 
 
-	ld de, mainMenu
+	ld hl, mainMenu
 menu:
 	call callFromMenu
 	jr menu
@@ -32,10 +32,34 @@ printMainMenuHelp:
 	pop de
 	ret
 
+load8000:
+	push hl
+	ld hl, LOAD_ADDRESS
+	call load
+	pop hl
+	ret
+
+loadAnyAddress:
+	ld de, askAddress_string
+	call blockingSend
+	call readHex
+	call load
+	ret
+
+runAnyAddress:
+	push de
+	ld de, askAddress_string
+	call blockingSend
+	call readHex
+	pop de
+	jp (hl)	; the RET in the function at HL returns
+
+; hl - load address
 load:
 	push af
 	push bc
 	push de
+	push hl
 	ld de, waitingSizeString
 	call blockingSend
 	call getChar
@@ -51,7 +75,7 @@ load:
 	ld a, 0ah
 	call putChar
 
-	ld de, LOAD_ADDRESS
+	ex de, hl
 load_loop:
 	call getChar
 	call printHex
@@ -63,11 +87,14 @@ load_loop:
 	jr nz, load_loop
 	ld de, loadedString
 	call blockingSend
+	pop hl
 	pop de
 	pop bc
 	pop af
 	ret
 
+askAddress_string: .string "Base address (hex): "
+	.int8 0
 waitingSizeString: .string "Waiting for size... "
 	.int8 0
 sizeString: .string "Size "
@@ -78,15 +105,19 @@ syntaxErrorString: .string "Syntax Error\n"
 	.int8 0
 promptString: .string "> "
 	.int8 0
-helpString: .string "h - help\nl - load\nr - run\n"
+helpString: .string "h - help\nl - load to 8000h\nm - load any address\nr - run\nt - run any address\n"
 	.int8 0
 mainMenu:
 	.int8 'h'
 	.int16 printMainMenuHelp
 	.int8 'l'
-	.int16 load
+	.int16 load8000
+	.int8 'm'
+	.int16 loadAnyAddress
 	.int8 'r'
 	.int16 LOAD_ADDRESS
+	.int8 't'
+	.int16 runAnyAddress
 	.int8 0		; 0 terminated
 
 #include "setupPio.asm"
