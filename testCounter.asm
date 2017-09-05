@@ -8,14 +8,13 @@
 	; RESET CTC0
 	ld a, 03h
 	out (CTC0)
-	; 7=1 enable interrupts, 6=0 TIMER mode, 5=1 256 PRESCALER,  4=1 POS EDGE
-	; 3=0 AUTO Start, 2=1 TIME Constant follows, 1=0 Continue, 0 = 1
-	; 1011 0101
 	;ld de, starting_string
 	;call BLOCKING_SEND
 ctcLoop:
+	; 7=1 enable interrupts, 6=0 TIMER mode, 5=1 256 PRESCALER,  4=1 POS EDGE
+	; 3=0 AUTO Start, 2=1 TIME Constant follows, 1=0 Continue, 0 = 1
+	; 1011 0101 = B5
 	ld a, 0B5h
-	;ld a, 035h
 	out (CTC0)
 	; Set counter to 255
 	ld a, 25
