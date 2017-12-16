@@ -68,7 +68,11 @@
 	; D1=0 Transmit interrupt disable, D0=0 External Interrupts disable
 	ld a, 11h
 	out (SIO_B_CONTROL)
-	ld a, 00h
+	ld a, 02h
+	out (SIO_B_CONTROL)
+
+	; WR0=1100 0000, Reset Tx underrun
+	ld a, 0C0h
 	out (SIO_B_CONTROL)
 
 	ld de, starting_string
@@ -97,12 +101,6 @@ counter0Int:
 	ei
 	reti
 sioInt:
-	push af
-	ld a, 00h
-	out (SIO_B_CONTROL)
-	in (SIO_B_CONTROL)
-	ld (status_rr0), a
-	pop af
 	ei
 	reti
 tick_string: .string "tick"
