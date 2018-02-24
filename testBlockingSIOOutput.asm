@@ -1,10 +1,5 @@
 #include "constants.asm"
 .org 8000h
-	; Install interrupt handler for CTC0
-	ld hl, counter0Int
-	ld (INTERRUPT_VECTOR_COUNTER0), hl
-	ld a, COUNTER0_INTERRUPT_NR
-	out (CTC0)
 	; RESET CTC0
 	ld a, 03h
 	out (CTC0)
@@ -22,25 +17,11 @@
 	;
 	; Setup SIO Channel B
 	;
-	ld hl, sioInt
-	ld (INTERRUPT_VECTOR_SIO), hl
 
 	; Channel reset WR0
 	; 0001 1000
 	ld a, 18h
 	out (SIO_B_CONTROL)
-
-	; Write interrupt vector to WR2
-	ld a, 02h
-	out (SIO_B_CONTROL)
-	ld a, SIO_INTERRUPT_NR
-	out (SIO_B_CONTROL)
-
-	; Try reading back RR2
-	ld a, 02h
-	out (SIO_B_CONTROL)
-	in (SIO_B_CONTROL)
-	call PRINT_HEX
 
 	; Reset ext/status interrupts, Async mode, Parity, Stop bits
 	ld a, 14h
@@ -63,16 +44,11 @@
 	ld a, 068h
 	out (SIO_B_CONTROL)
 
-
 	; WR1, Reset External/Status Interrupts
 	; D1=0 Transmit interrupt disable, D0=0 External Interrupts disable
 	ld a, 11h
 	out (SIO_B_CONTROL)
-	ld a, 02h
-	out (SIO_B_CONTROL)
-
-	; WR0=1100 0000, Reset Tx underrun
-	ld a, 0C0h
+	ld a, 00h
 	out (SIO_B_CONTROL)
 
 	ld de, starting_string
