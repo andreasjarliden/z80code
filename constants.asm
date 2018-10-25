@@ -60,10 +60,15 @@
 .eq INTERRUPT_VECTOR_SIO_B_SPECIAL_RECEIVE_CONDITION 0F016h
 
 ;
-; ROM functions
+; ROM functions from jump table
+; (each jp nn takes 3 bytes, the first one at 0002)
 ;
 .eq BLOCKING_SEND 0002h
-.eq GET_CHAR 0005h
-.eq PUT_CHAR 0008h
+.eq GET_CHAR_PIO 0005h
+.eq PUT_CHAR_PIO 0008h
 .eq PRINT_HEX 000Bh
 .eq READ_HEX 000Dh
+.eq GET_CHAR 0010h
+.eq GET_CHAR_SIO 0010h
+.eq PUT_CHAR 0013h
+.eq PUT_CHAR_SIO 0013h

@@ -21,5 +21,5 @@ HEX2BIN=${ASMPATH}/hex2bin
 
 testPrintString.hex:testPrintString.asm constants.asm setupPio.asm blockingSend.asm
 
-rom.hex: rom.asm constants.asm setupPio.asm blockingSend.asm getChar.asm putChar.asm printHex.asm readHex.asm callFromMenu.asm
+rom.hex: rom.asm constants.asm setupPio.asm setupSio.asm blockingSend.asm getCharPIO.asm putCharPIO.asm getCharSIO.asm putCharSIO.asm printHex.asm readHex.asm callFromMenu.asm
 
