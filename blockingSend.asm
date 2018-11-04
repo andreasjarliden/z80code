@@ -4,28 +4,14 @@
 blockingSend:
 	push af
 	push de
-	push hl
-	; install output interrupt handler
-	ld hl, bs_didOutput
-	ld (INTERRUPT_VECTOR_PIO_OUTPUT), hl
+bs_loop:
 	ld a, (de)
 	or a
-	out (PIO_A_DATA)
-bs_wait:
-	halt
-	jr nz, bs_wait
-	pop hl
+	jr z, bs_end
+	call PUT_CHAR
+	inc de
+	jr bs_loop
+bs_end:
 	pop de
 	pop af
 	ret
-bs_didOutput:
-	inc de
-	ld a, (de)
-	or a
-; TODO does not work on empty string?
-	jr z, done 
-	out (PIO_A_DATA)
-done:
-	; TODO restore INTERRUPT_VECTOR_PIO_OUTPUT
-	ei
-	reti
