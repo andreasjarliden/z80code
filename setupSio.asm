@@ -54,3 +54,5 @@ setupSio:
 	ld a, 00h
 	out (SIO_B_CONTROL)
 
+	ret
+
