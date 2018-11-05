@@ -34,7 +34,7 @@ setupSio:
 	ld a, 04h
 	out (SIO_B_CONTROL)
 
-	; WR3: 11 8 bits, 1 No Auto Enable, 0000, 1 disable Rx: 1100 0000
+	; WR3: 11 8 bits, 1 No Auto Enable, 0000, 1 enable Rx: 1100 0001
 	ld a, 03h
 	out (SIO_B_CONTROL)
 	ld a, 0e1h
