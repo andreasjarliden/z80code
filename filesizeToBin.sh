@@ -1,1 +1,1 @@
-perl -e "print pack(v,`stat -f %z $1`)"
+perl -e "print pack(v,`wc -c <$1`)"
