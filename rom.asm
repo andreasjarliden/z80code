@@ -69,32 +69,10 @@ load:
 	ld c, a
 	call getChar
 	ld b, a
-	ld de, sizeString
-	call blockingSend
-	ld a, b
-	call printHex
-	ld a, c
-	call printHex
-	ld a, 0ah
-	call putChar
-
 	ex de, hl
 load_loop:
-	; print bc remaining size
-	ld a,b
-	call printHex
-	ld a,c
-	call printHex
-	ld a, 20h
-	call putChar
-
 	call getChar
-	call printHex
 	ld (de), a
-
-	ld a, 0ah
-	call putChar
-
 	inc de
 	dec bc
 	ld a,b
