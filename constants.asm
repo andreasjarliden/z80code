@@ -72,3 +72,9 @@
 .eq GET_CHAR_SIO 0011h
 .eq PUT_CHAR 0014h
 .eq PUT_CHAR_SIO 0014h
+
+;
+; ASCII constants
+;
+.eq NEWLINE 0Ah
+.eq CARRIAGE_RETURN 0Dh

@@ -1,3 +1,4 @@
+#include "constants.asm"
 ; Returns 16-bit hex value in HL
 readHex:
 	push af
@@ -7,7 +8,11 @@ readHex:
 rh_loop:
 	call GET_CHAR
 	call PUT_CHAR
-	cp 0dh
+	; \r is line ending on Mac, \n on Unix.
+	; \r\n on Windows but ignore that!
+	cp CARRIAGE_RETURN
+	jr z, rh_done
+	cp NEWLINE
 	jr z, rh_done
 	ld d, h
 	ld e, l
