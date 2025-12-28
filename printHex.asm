@@ -14,14 +14,14 @@ printHex:
 	ld hl, printHex_table
 	add hl, bc
 	ld a, (hl)
-	call putChar
+	call PUT_CHAR
 	ld a, d
 	and 0fh
 	ld c, a
 	ld hl, printHex_table
 	add hl, bc
 	ld a, (hl)
-	call putChar
+	call PUT_CHAR
 	pop hl
 	pop de
 	pop bc

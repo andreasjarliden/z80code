@@ -65,13 +65,13 @@ load:
 	push hl
 	ld de, waitingSizeString
 	call blockingSend
-	call getChar
+	call GET_CHAR
 	ld c, a
-	call getChar
+	call GET_CHAR
 	ld b, a
 	ex de, hl
 load_loop:
-	call getChar
+	call GET_CHAR
 	ld (de), a
 	inc de
 	dec bc

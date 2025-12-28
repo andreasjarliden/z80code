@@ -1,5 +1,4 @@
 	; Output char A via SIO channel B
-putChar:
 putCharSIO:
 	push af
 	push bc

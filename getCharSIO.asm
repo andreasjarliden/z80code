@@ -1,5 +1,4 @@
 ; Reads char from SIO B (blocking) and returns in A
-getChar:
 getCharSIO:
 	; Wait for Receive Char Available bit D0 in RR0 to be set
 gcSIO_loop:
