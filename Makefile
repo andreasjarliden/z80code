@@ -1,4 +1,4 @@
-ASMPATH=~/working/assembler/build
+ASMPATH=~/workspace/assembler/build
 ASM=${ASMPATH}/asm
 HEX2H=${ASMPATH}/hex2h
 HEX2I8HEX=${ASMPATH}/hex2i8hex
