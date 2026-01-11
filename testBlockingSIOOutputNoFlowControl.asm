@@ -1,10 +1,13 @@
+; WIRING
+; CTC ZC/TO0 wired to SIO ~RxTxC channel B
+
 #include "constants.asm"
 .org 8000h
 	; RESET CTC0
 	ld a, 03h
 	out (CTC0)
 
-	; Generate 9600 Hz from 4 MHz clock. 4M/(16*26)~=9615 Hz
+	; Generate 9600 Hz from 4 MHz clock. 4M/(16*26)~=9615 Hz on CTC ZC/TO0
 	; 7=0 disable interrupts, 6=0 TIMER mode, 5=0 16 PRESCALER,  4=1 POS EDGE
 	; 3=0 AUTO Start, 2=1 TIME Constant follows, 1=0 Continue, 0 = 1
 	; 1001 0101 = B5
@@ -23,22 +26,30 @@
 	ld a, 18h
 	out (SIO_B_CONTROL)
 
-	; Reset ext/status interrupts, Async mode, Parity, Stop bits
+  ; WR4 should be initialized first according to documentation
+	; Reset ext/status interrupts, select WR4
 	ld a, 14h
 	out (SIO_B_CONTROL)
 	; x1 clock External sync, No parity, 1 stop bit,
+  ;D0     0    No parity
+  ;D1     N/A  Parity ~Odd/Even
+  ;D3, D2 01   One stop bit
+  ;D5, D4 00   00 according to asyncronous section
+  ;D7, D6 00   X1 clock
 	; 0000 0100
 	ld a, 04h
 	out (SIO_B_CONTROL)
 
-	; WR3: 11 8 bits, 1 No Auto Enable, 0000, 1 disable Rx: 1100 0000
+	; WR3: 11 8 bits, 0 No Auto Enable, 0000, 0 No enalbe Rx
+  ; (auto enable requires ~CTS to be set
+  ; 1100 0000
 	ld a, 03h
 	out (SIO_B_CONTROL)
-	ld a, 0e1h
+	ld a, 0C0h
 	out (SIO_B_CONTROL)
 
-	; WR5: 0 DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 0 RTS, 0
-	; 1110 1010
+	; WR5: 0 No DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 0 RTS, 0
+	; 0110 1000
 	ld a, 05h
 	out (SIO_B_CONTROL)
 	ld a, 068h
@@ -64,6 +75,8 @@ loop:
 	and 04h
 	jr z, loop
 	; Write the next byte to the SIO
+  ld a, '.'
+  call PUT_CHAR
 	ld a, (hl)
 	or a
 	jr z, end
