@@ -51,10 +51,11 @@ start:
 	ld a, 04h
 	out (SIO_B_CONTROL)
 
-	; WR3: 11 8 bits, 1 No Auto Enable, 0000, 1 enable Rx: 1110 0001
+	; WR3: 11 8 bits, 0 No Auto Enable, 0000, 1 enable Rx: 1110 0001
+  ; No Auto Enable so that it works without flow control
 	ld a, 03h
 	out (SIO_B_CONTROL)
-	ld a, 0e1h
+	ld a, 0c1h
 	out (SIO_B_CONTROL)
 
 	; WR5: 0 DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 0 RTS, 0

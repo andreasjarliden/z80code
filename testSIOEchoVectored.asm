@@ -1,10 +1,5 @@
 #include "constants.asm"
 .org 8000h
-	; Install interrupt handler for CTC0
-	ld hl, counter0Int
-	ld (INTERRUPT_VECTOR_COUNTER0), hl
-	ld a, COUNTER0_INTERRUPT_NR
-	out (CTC0)
 	; RESET CTC0
 	ld a, 03h
 	out (CTC0)
@@ -31,7 +26,6 @@
 	ld hl, sioBSpecialReceiveConditionInt
 	ld (INTERRUPT_VECTOR_SIO_B_SPECIAL_RECEIVE_CONDITION), hl
 
-start:
 	; Channel reset WR0
 	; 0001 1000
 	ld a, 18h
@@ -68,10 +62,9 @@ start:
 	ld a, 17h
 	out (SIO_B_CONTROL)
 
-	; WR3: 11 8 bits, 1 No Auto Enable, 0000, 1 enable Rx: 1110 0001
+	; WR3: 11 8 bits, 0 No Auto Enable, 0000, 1 enable Rx: 1110 0001
 	ld a, 03h
 	out (SIO_B_CONTROL)
-	ld a, 0e1h
 	ld a, 0c1h
 	out (SIO_B_CONTROL)
 

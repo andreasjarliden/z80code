@@ -18,11 +18,10 @@
 	ld a, 04h
 	out (SIO_B_CONTROL)
 
-	; WR3: 11 8 bits, 1 Auto Enable, 0000, 1 enable Rx: 1110 0001
+	; WR3: 11 8 bits, 0 Auto Enable, 0000, 1 enable Rx: 1110 0001
+  ; No Auto Enable so it works without flow control
 	ld a, 03h
 	out (SIO_B_CONTROL)
-	ld a, 0e1h
-	;ld a, 0c0h
 	ld a, 0c1h
 	out (SIO_B_CONTROL)
 
