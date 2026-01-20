@@ -3,30 +3,41 @@
 
   ld bc, 42
   call malloc
-  ld de, returnedStr
-  call BLOCKING_SEND
-  ld b, h
-  ld c, l
-  call printHex16
-  ld a, 10h
+
+  ld a, 'c'
   call PUT_CHAR
   push hl
-  pop ix
-  ld h, (ix - 1)
-  ld l, (ix - 2)
-  ld b, h
-  ld c, l
   call printHex16
+  pop hl
+
+  ld a, 'd'
+  call PUT_CHAR
+
+  push hl
+  pop ix
+  ld b, (ix - 1)
+  ld c, (ix - 2)
+  push bc
+  call printHex16
+  pop bc
+
+  ld bc, 42
+  call malloc
+
+  ld a, 'e'
+  call PUT_CHAR
+  push hl
+  call printHex16
+  pop hl
+
   ret
 
-; hl = malloc(BC bytes)
-; BC size
+; HL = malloc(BC size in bytes)
 malloc:
   push af
   push bc
   push de
   push ix
-  push hl
   ld ix, firstHeapBlock ; ix is heapBlock pointer
 malloc_loop:
   ; de = heapBlock->size
@@ -56,34 +67,51 @@ malloc_loop:
   jr malloc_loop
 
 malloc_fits:
-  ; Write the size at heapBlock->start
-  ld (ix+0), c
-  ld (ix+1), b
-  push ix
-  pop ix
-  ; Add 2 bytes and return that pointer
-  inc hl
-  inc hl
-  jr malloc_ret
+  ; HL = heapBlock->start
+  ld h, (ix+1)
+  ld l, (ix+0)
 
-malloc_failed:
-  ld ix, 0
-malloc_ret:
+  ld a, 'a'
+  call PUT_CHAR
+  push hl
+  call printHex16
   pop hl
+
+  ; Write the size at heapBlock->start, add two bytes and return
+
+  ld a, 'b'
+  call PUT_CHAR
+  push bc
+  call printHex16
+  pop bc
+
+  ld (hl), c
+  inc hl
+  ld (hl), b
+  inc hl
+
+  jr malloc_ret
+malloc_failed:
+  ld hl, 0
+malloc_ret:
   pop ix
   pop de
   pop bc
   pop af
 	ret
 
-; print hex value in bc
+; print 16bit hex value on stac
 printHex16:
+  push ix
+  ld ix, 0
+  add ix, sp
   push af
-  ld a, b
+  ld a, (ix + 5)
   call PRINT_HEX
-  ld a, c
+  ld a, (ix + 4)
   call PRINT_HEX
   pop af
+  pop ix
   ret
 
 returnedStr:
@@ -91,6 +119,6 @@ returnedStr:
   .int8 0
 
 firstHeapBlock: 
-	.int16 0A00h ; start
+	.int16 0A000h ; start
   .int16 0100h ; size
   .int16 0000h ; next
