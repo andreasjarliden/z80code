@@ -2,20 +2,19 @@
 ; Writing to HEAD
 ; Reading from TAIL
 ; HEAD == TAIL means empty
-.eq RX_RING_BUFFER_PTR 09000h
-.eq RX_RING_BUFFER_SIZE 4
-.eq RX_RING_BUFFER_SIZE_MASK 3
-.eq RX_RING_BUFFER_HIGH_WATER 3
-.eq RX_RING_BUFFER_LOW_WATER 1
-
-
 
 #include "constants.asm"
 .org 8000h
-  ; Init RX ring buffer
+  jp flowControl
+#include "ringBuffer.asm"
+
+flowControl:
+  ld ix, SIO_RX_RING_BUFFER
+  ld a, 0ffh
+  call ringBufferPush
   ld a, 0
-  ld (RX_RING_BUFFER_HEAD), a
-  ld (RX_RING_BUFFER_TAIL), a
+  call ringBufferPop
+  call PRINT_HEX
 
 	; RESET CTC0
 	ld a, 03h
@@ -89,169 +88,160 @@
 	ld a, 0C0h
 	out (SIO_B_CONTROL)
 
-	ld de, starting_string
-	call BLOCKING_SEND
+  ;
+  ; Make a slow timer with about 1Hz
+  ;
 
+	; Install interrupt handler for CTC1
+	ld hl, counter1Int
+	ld (INTERRUPT_VECTOR_COUNTER1), hl
+	ld a, COUNTER1_INTERRUPT_NR
+	out (CTC1)
+	; RESET CTC1
+	ld a, 03h
+	out (CTC1)
+
+outerLoop:
+  ld d, 50 ; outer loop counter
+
+ctcLoop:
+  ld a, 0
+  ld (didTick), a
+	; 7=1 enable interrupts, 6=0 TIMER mode, 5=1 256 PRESCALER,  4=1 POS EDGE
+	; 3=0 AUTO Start, 2=1 TIME Constant follows, 1=0 Continue, 0 = 1
+	; 1011 0101 = B5
+	ld a, 0B5h
+	out (CTC1)
+	; Set counter to 255
+	ld a, 255
+	out (CTC1)
+halt_loop:
+	halt
+  ld a, (didTick)
+  cp 1
+  jr nz, halt_loop
+
+  dec d
+  jr nz, ctcLoop
+
+  ld ix, SIO_RX_RING_BUFFER
 loop:
-  ld a, (RX_RING_BUFFER_HEAD)
-  ; call PRINT_HEX
+  ld a, (ix + RING_BUFFER_HEAD)
   ld b, a
-  ld a, (RX_RING_BUFFER_TAIL)
+  ld a, (ix + RING_BUFFER_TAIL)
   cp b
   jr z, loop
 
-	; ld de, tick_string
-	; call BLOCKING_SEND
-	;  ret
+  call ringBufferPop
+  ; Output received character
+	out (SIO_B_DATA)
 
-  ; Ring buffer not empty
-  ; Read char at TAIL
-  ld hl, RX_RING_BUFFER_PTR
-  ld b, 0
-  ld a, (RX_RING_BUFFER_TAIL)
-  ld c, a
-  add hl, bc
-  ld d, (hl)        ; Byte at TAIL in reg D
-  ; Increase TAIL
-  inc c
-  ; Module with SIZE
-  ld a, c
-  and RX_RING_BUFFER_SIZE_MASK
-  ; Store TAIL
-  ld (RX_RING_BUFFER_TAIL), a
-  ; Decrease size, at low water mark?
-  ld hl, RX_RING_BUFFER_SIZE
-  di
-  dec (hl)
-  ld a, (hl)
-  ei
-  cp RX_RING_BUFFER_LOW_WATER
-  jr nz, loop_skip
+	jr outerLoop
 
-  ; At low water mark, enable the RTS again
+rtsOn:
+  ; enable RTS
 	; WR5: 0 DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 1 RTS, 0
 	; 1110 1010
+  push af
 	ld a, 05h
 	out (SIO_B_CONTROL)
 	ld a, 06Ah
 	out (SIO_B_CONTROL)
+  pop af
+  ret
 
-loop_skip:
-  
-  ; Output received character
-  ld a, d
-	out (SIO_B_DATA)
-  jr loop
+rtsOff:
+  ; Disable RTS
+	; WR5: 0 DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 0 RTS, 0
+	; 1110 1010
+  push af
+	ld a, 05h
+	out (SIO_B_CONTROL)
+	ld a, 068h
+	out (SIO_B_CONTROL)
+  pop af
+  ret
 
-	halt
-	ld a, (ERROR)
-	or a
-	jr z, loop
-	ld de, error_string
-	call BLOCKING_SEND
-	jr loop
-
-counter0Int:
+counter1Int:
+  push af
+  ld a, 1
+  ld (didTick), a
+  pop af
   ei
-	reti
+  reti
 
 sioInt:
 sioBOutputBufferEmptyInt:
   push af
   ; Reset Tx int pending, otherwise the interrupt happens directly again
-  ; WR0= 00 (Null CRC reset), 101 (Reset Tx int pending ), 000 (register 0)
-  ; 0010 1000, 28h
-	ld a, 028h
-	out (SIO_B_CONTROL)
-
+  ; WR1= 00 (Null CRC reset), 101 (Reset Tx int pending ), 000 (register 0)
+  ; 0011 1000, 28h
+  ld a, 028h
+  out (SIO_B_CONTROL)
   pop af
   ei
-	reti
-sioBStatusChangeInt:
-	push af
-	ld a, 1
-	ld (ERROR), a
+  reti
 
+sioBStatusChangeInt:
+  push af
   ; Reset External/Status Interrupts, otherwise the interupt happens directly again
   ; WR0= 00 (Null CRC reset), 010 (Reset Tx int pending ), 000 (register 0)
   ; 0001 0000, 10h
-	ld a, 010h
+  ld a, 010h
   out (SIO_B_CONTROL)
-
-	pop af
+  pop af
   ei
-	reti
+  reti
+
 sioBReceiveCharAvailableInt:
-	push af
-  push bc
-  push de
-  push hl
+  push af
+  push ix
 
-  ; Read and echo the char
-	in (SIO_B_DATA)
-  ld d, a   ; Char in reg D
+  ; Read received character
+  in (SIO_B_DATA)
 
-  ; Add received char at HEAD
-  ld hl, RX_RING_BUFFER_PTR
-  ld b, 0
-  ld a, (RX_RING_BUFFER_HEAD)
-  ld c, a
-  add hl, bc
+  ; Push to ring buffer
+  ld ix, SIO_RX_RING_BUFFER
+  call ringBufferPush
 
-  ld a, d ; received char
-  ld (hl), a
-  ; Increase HEAD
-  inc c
-  ; Module with SIZE
-  ld a, c
-  and RX_RING_BUFFER_SIZE_MASK
-  ; Store HEAD
-  ld (RX_RING_BUFFER_HEAD), a
-  ; Increase size, at high water mark?
-  ld hl, RX_RING_BUFFER_SIZE
-  inc (hl)
-  ld a, (hl)
-  cp RX_RING_BUFFER_HIGH_WATER
-  jr nz, charAvailable_skip
-
-  ; At low water mark, disable RTS
-	; WR5: 0 DTR active, 11 8 bits, 0 no break, 1 Tx Enable, 0, 0 RTS, 0
-	; 1110 1010
-	ld a, 05h
-	out (SIO_B_CONTROL)
-	ld a, 068h
-	out (SIO_B_CONTROL)
-
-charAvailable_skip:
-
-  pop hl
-  pop de
-  pop bc
-	pop af
+  pop ix
+  pop af
   ei
-	reti
+  reti
+
 sioBSpecialReceiveConditionInt:
-	push af
-	ld a, 1
-	ld (ERROR), a
+  push af
 
   ; Error Reset, otherwise the interupt happens directly again
   ; WR0= 00 (Null CRC reset), 110 (Reset Error), 000 (register 0)
   ; 0011 0000, 30h
-	ld a, 30h
+  ld a, 30h
   out (SIO_B_CONTROL)
 
-	pop af
+  pop af
   ei
-	reti
-starting_string: .string "<start>"
-	.int8 0
-error_string: .string "<error>"
-	.int8 0
-tick_string: .string "<tic>"
-	.int8 0
-ERROR: .int8 0
-SIO_B_OUTPUT_FULL: .int8 0
-RX_RING_BUFFER_HEAD: .int8 0
-RX_RING_BUFFER_TAIL: .int8 0
-RX_RING_BUFFER_SIZE: .int8 0
+  reti
+
+  starting_string: .string "<start>"
+  .int8 0
+  error_string: .string "<error>"
+  .int8 0
+  rtsOn_string: .string "RTS=ON"
+  .int8 0
+  rtsOff_string: .string "RTS=OFF"
+  .int8 0
+  didTick: .int8 0
+  SIO_B_OUTPUT_FULL: .int8 0ffh
+
+
+  SIO_RX_RING_BUFFER:
+  .int16 09000h ; PTR
+  .int8 0 ; HEAD
+  .int8 0 ; TAIL
+  .int8 0 ; Current SIZE
+  .int8 63 ; MASK
+  .int8 24 ; LOWWATER
+  .int8 48 ; HIGHWATER
+  .int16 rtsOn ; LOWWATER CALLBACK
+  .int16 rtsOff ; HIGHWATER CALLBACK
+
