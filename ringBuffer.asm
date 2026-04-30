@@ -94,3 +94,21 @@ ringBufferPop_skip:
   pop bc
   ret
 
+; IX - pointer to ring buffer struct
+; Returns in A - 0 if ring buffer is empty; nz otherwise
+; Flags also set
+ringBufferIsEmpty:
+  ld a, (IX+RING_BUFFER_HEAD)
+  sub a, (IX+RING_BUFFER_TAIL)
+  ret
+
+; IX - pointer to ring buffer struct
+; Returns in A - 0 if ring buffer is full; nz otherwise
+; Flags also set
+ringBufferIsFull:
+  ld a, (IX+RING_BUFFER_SIZE)
+  sub a, (IX+RING_BUFFER_MASK)
+  ret
+
+
+

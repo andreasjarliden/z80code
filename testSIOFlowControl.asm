@@ -88,6 +88,31 @@ flowControl:
 	ld a, 0C0h
 	out (SIO_B_CONTROL)
 
+  ld ix, SIO_TX_RING_BUFFER
+  ld a, '5'
+  ; call ringBufferPush
+  call pushTx
+
+  ld a, '4'
+  ; call ringBufferPush
+  call pushTx
+
+  ld a, '3'
+  ; call ringBufferPush
+  call pushTx
+
+  ld a, '2'
+  ; call ringBufferPush
+  call pushTx
+
+  ld a, '1'
+  ; call ringBufferPush
+  call pushTx
+
+  ld a, '0'
+  call pushTx
+  ; out (SIO_B_DATA)
+
   ;
   ; Make a slow timer with about 1Hz
   ;
@@ -124,6 +149,7 @@ halt_loop:
   dec d
   jr nz, ctcLoop
 
+
   ld ix, SIO_RX_RING_BUFFER
 loop:
   ld a, (ix + RING_BUFFER_HEAD)
@@ -134,9 +160,57 @@ loop:
 
   call ringBufferPop
   ; Output received character
-	out (SIO_B_DATA)
+	; out (SIO_B_DATA)
+  call pushTx
+  call printHexTX
 
 	jr outerLoop
+
+; character in A
+pushTx:
+  push af
+  push bc
+  push de
+
+  ld b, a
+  ld ix, SIO_TX_RING_BUFFER
+
+pushTx_loop:
+  call ringBufferIsFull
+  jr nz, pushTx_1
+  halt
+  jr pushTx_loop
+
+pushTx_1:
+  ; Disable interrupts. Otherwise we might conclude there are characters
+  ; waiting, but the tx buffer becomes empty before we can add the new
+  ; character
+  di 
+  call ringBufferIsEmpty
+  jr nz, pushTx_notEmpty
+
+  ; Ring buffer is empty. If the transmitter is free as well, output the
+  ; character directly.  Otherwise put it in the buffer
+  ld a, 0 ; Check Read Register 0
+  out (SIO_B_CONTROL)
+  in (SIO_B_CONTROL)
+  and 4 ; Bit 2 is Transmit Buffer Empty
+  jr z, pushTx_notEmpty
+
+  ld a, b
+  out (SIO_B_DATA)
+  jr pushTx_exit
+
+pushTx_notEmpty:
+  ld a, b
+  call ringBufferPush
+pushTx_exit:
+  ei
+  pop de
+  pop bc
+  pop af
+  ret
+
 
 rtsOn:
   ; enable RTS
@@ -173,11 +247,25 @@ counter1Int:
 sioInt:
 sioBOutputBufferEmptyInt:
   push af
+  push ix
+
+  ld ix, SIO_TX_RING_BUFFER
+  call ringBufferIsEmpty
+  jr z, sioBOutputBufferEmptyInt_isEmpty
+
+  call ringBufferPop
+  out (SIO_B_DATA)
+  jr sioBOutputBufferEmptyInt_exit
+
+sioBOutputBufferEmptyInt_isEmpty:
   ; Reset Tx int pending, otherwise the interrupt happens directly again
   ; WR1= 00 (Null CRC reset), 101 (Reset Tx int pending ), 000 (register 0)
-  ; 0011 1000, 28h
+  ; 0010 1000, 28h
   ld a, 028h
   out (SIO_B_CONTROL)
+
+sioBOutputBufferEmptyInt_exit:
+  pop ix
   pop af
   ei
   reti
@@ -185,7 +273,7 @@ sioBOutputBufferEmptyInt:
 sioBStatusChangeInt:
   push af
   ; Reset External/Status Interrupts, otherwise the interupt happens directly again
-  ; WR0= 00 (Null CRC reset), 010 (Reset Tx int pending ), 000 (register 0)
+  ; WR0= 00 (Null CRC reset), 010 (Reset External/Status int), 000 (register 0)
   ; 0001 0000, 10h
   ld a, 010h
   out (SIO_B_CONTROL)
@@ -222,19 +310,18 @@ sioBSpecialReceiveConditionInt:
   ei
   reti
 
-  starting_string: .string "<start>"
-  .int8 0
-  error_string: .string "<error>"
-  .int8 0
-  rtsOn_string: .string "RTS=ON"
-  .int8 0
-  rtsOff_string: .string "RTS=OFF"
-  .int8 0
-  didTick: .int8 0
-  SIO_B_OUTPUT_FULL: .int8 0ffh
+starting_string: .string "<start>\0"
+error_string: .string "<error>\0"
+rtsOn_string: .string "RTS=ON\0"
+rtsOff_string: .string "RTS=OFF\0"
+directly_string: .string "Output directly\0"
+empty_string: .string "Buffer empty\0"
+toBuffer_string: .string "Adding to buffer\0"
+didTick: .int8 0
+SIO_B_OUTPUT_FULL: .int8 0ffh
 
 
-  SIO_RX_RING_BUFFER:
+SIO_RX_RING_BUFFER:
   .int16 09000h ; PTR
   .int8 0 ; HEAD
   .int8 0 ; TAIL
@@ -244,4 +331,47 @@ sioBSpecialReceiveConditionInt:
   .int8 48 ; HIGHWATER
   .int16 rtsOn ; LOWWATER CALLBACK
   .int16 rtsOff ; HIGHWATER CALLBACK
+
+SIO_TX_RING_BUFFER:
+  .int16 09100h ; PTR
+  .int8 0 ; HEAD
+  .int8 0 ; TAIL
+  .int8 0 ; Current SIZE
+  .int8 63 ; MASK
+  .int8 0ffh ; LOWWATER (not used)
+  .int8 0ffh ; HIGHWATER (not used)
+  .int16 0 ; LOWWATER CALLBACK (not used)
+  .int16 0 ; HIGHWATER CALLBACK (not used)
+
+; Print hex byte in A
+printHexTX:
+	push af
+	push bc
+	push de
+	push hl
+	ld d, a			; backup in d
+	ld c, a
+	ld b, 0
+	srl c
+	srl c
+	srl c
+	srl c
+	ld hl, printHex_table
+	add hl, bc
+	ld a, (hl)
+	call pushTx
+	ld a, d
+	and 0fh
+	ld c, a
+	ld hl, printHex_table
+	add hl, bc
+	ld a, (hl)
+	call pushTx
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+printHex_table:
+	.string "0123456789ABCDEF"
 
