@@ -2,13 +2,14 @@
 	jr init
 
 ; Jump table for ROM functions
-	jp blockingSend
+	jp blockingSendPIO
 	jp getCharPIO
 	jp putCharPIO
 	jp printHex
 	jp readHex
 	jp getCharSIO
 	jp putCharSIO
+  jp blockingSendSIO
 
 init:
 	ld sp, STACK_ADDRESS
@@ -17,11 +18,11 @@ init:
 	call setupPio
 	ld a, 03h		; Disable interrupts PIO B (Actually bidir input on port A)
 	out (PIO_B_CONTROL)
-	call setupSio
 	; Enable vectored interrupts
 	im 2	; Interupt mode 2: vectored interrupts
 	ei
 
+	call setupSio
 
 	ld hl, mainMenu
 menu:
@@ -114,8 +115,10 @@ mainMenu:
 	.int8 0		; 0 terminated
 
 #include "setupPio.asm"
+#include "ringBuffer.asm"
 #include "setupSio.asm"
 #include "blockingSend.asm"
+#include "blockingSendSIO.asm"
 #include "getCharPIO.asm"
 #include "putCharPIO.asm"
 #include "getCharSIO.asm"

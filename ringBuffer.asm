@@ -11,6 +11,14 @@
 .eq RING_BUFFER_HIGHWATER_CALLBACK_LO 10
 .eq RING_BUFFER_HIGHWATER_CALLBACK_HI 11
 
+; Resets the ringBuffer to empty
+; IX - pointer to ring buffer struct
+ringBufferReset:
+  ld (ix + RING_BUFFER_HEAD), 0
+  ld (ix + RING_BUFFER_TAIL), 0
+  ld (ix + RING_BUFFER_SIZE), 0
+  ret
+
 ; A - Character to push
 ; IX - pointer to ring buffer struct
 ringBufferPush:

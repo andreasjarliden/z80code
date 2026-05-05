@@ -30,8 +30,12 @@
 .eq INTERRUPT_VECTOR_2 0F002h
 .eq INTERRUPT_VECTOR_4 0F004h
 
-.eq SEND_BUFFER_START 0F100h
-.eq SEND_BUFFER_END 0F1FFh
+.eq SIO_RX_RING_BUFFER_PTR 0F100h ; 64 bytes, ends 0F139h
+.eq SIO_TX_RING_BUFFER_PTR 0F140h ; 64 bytes, ends 0F179h
+.eq SIO_RX_RING_BUFFER 0F180h; Ring buffer struct, 12 bytes
+.eq SIO_RX_RING_BUFFER_LOWWATER_CALLBACK 0F188h
+.eq SIO_RX_RING_BUFFER_HIGHWATER_CALLBACK 0F18Ah
+.eq SIO_TX_RING_BUFFER 0F18Ch; Ring buffer struct, 12 bytes
 
 ;
 ; Interrupts
@@ -63,17 +67,19 @@
 ; ROM functions from jump table
 ; (each jp nn takes 3 bytes, the first one at 0002)
 ;
+.eq BLOCKING_SEND_PIO 0002h
 .eq BLOCKING_SEND 0002h
 .eq GET_CHAR_PIO 0005h
 .eq PUT_CHAR_PIO 0008h
 .eq PRINT_HEX 000Bh
 .eq READ_HEX 000Eh
-; .eq GET_CHAR 0011h
-.eq GET_CHAR 0005h
+.eq GET_CHAR 0011h
+; .eq GET_CHAR 0005h
 .eq GET_CHAR_SIO 0011h
-; .eq PUT_CHAR 0014h
-.eq PUT_CHAR 0008h
+.eq PUT_CHAR 0014h
+; .eq PUT_CHAR 0008h
 .eq PUT_CHAR_SIO 0014h
+.eq BLOCKING_SEND_SIO 0017h
 
 ;
 ; ASCII constants

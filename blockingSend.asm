@@ -1,6 +1,7 @@
 #include "constants.asm"
 
 ; DE non-empty zero terminated message to send
+blockingSendPIO:
 blockingSend:
 	push af
 	push de
